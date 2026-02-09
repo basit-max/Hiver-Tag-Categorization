@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hiver Tag Categorization</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #f1c40f;
+        --primary-dark: #f39c12;
+        --dark: #1a1a1a;
+        --dark-secondary: #2d2d2d;
+        --dark-tertiary: #3a3a3a;
+        --light: #ffffff;
+        --light-gray: #f8f9fa;
+        --medium-gray: #e9ecef;
+        --text-dark: #212529;
+        --text-light: #6c757d;
+        --shadow: rgba(0, 0, 0, 0.1);
+        --shadow-lg: rgba(0, 0, 0, 0.15);
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        overflow: hidden;
+    }
+
+    /* Header Styles */
+    header {
+        background: linear-gradient(135deg, var(--dark) 0%, var(--dark-secondary) 100%);
+        color: var(--light);
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px var(--shadow-lg);
+        position: relative;
+        z-index: 100;
+    }
+
+    .header-content {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    h1 {
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        letter-spacing: -0.5px;
+    }
+
+    .controls-wrapper {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    /* Tabs */
+    .tabs {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .tabs button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        background: var(--dark-tertiary);
+        color: var(--light);
+        cursor: pointer;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: var(--transition);
+        font-size: 0.95rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .tabs button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        transition: left 0.5s;
+    }
+
+    .tabs button:hover::before {
+        left: 100%;
+    }
+
+    .tabs button:hover {
+        background: var(--dark-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .tabs button.active {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: var(--dark);
+        box-shadow: 0 4px 16px rgba(241, 196, 15, 0.3);
+        transform: translateY(-2px);
+    }
+
+    /* Search */
+    .search {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .search-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .search input {
+        width: 100%;
+        padding: 0.875rem 1rem 0.875rem 3rem;
+        border: 2px solid transparent;
+        border-radius: 12px;
+        background: var(--light);
+        font-size: 0.95rem;
+        transition: var(--transition);
+        box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .search input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 4px 16px rgba(241, 196, 15, 0.2);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-light);
+        pointer-events: none;
+    }
+
+    /* Upload Button */
+    .upload {
+        position: relative;
+    }
+
+    .upload input[type="file"] {
+        display: none;
+    }
+
+    .upload-btn {
+        padding: 0.875rem 1.5rem;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: var(--dark);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: var(--transition);
+        box-shadow: 0 2px 8px rgba(241, 196, 15, 0.3);
+        white-space: nowrap;
+    }
+
+    .upload-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(241, 196, 15, 0.4);
+    }
+
+    /* Container */
+    .container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        height: calc(100vh - 200px);
+        max-width: 1600px;
+        margin: 1.5rem auto;
+        gap: 1.5rem;
+        padding: 0 1.5rem;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        background: var(--light);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px var(--shadow);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem;
+        background: linear-gradient(135deg, var(--dark) 0%, var(--dark-secondary) 100%);
+        color: var(--light);
+        font-weight: 600;
+        font-size: 1rem;
+        border-bottom: 3px solid var(--primary);
+    }
+
+    .sidebar-content {
+        overflow-y: auto;
+        flex: 1;
+        padding: 0.5rem;
+    }
+
+    .sidebar-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .sidebar-content::-webkit-scrollbar-track {
+        background: var(--light-gray);
+        border-radius: 4px;
+    }
+
+    .sidebar-content::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 4px;
+    }
+
+    .sidebar-content::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-dark);
+    }
+
+    .sidebar-item {
+        padding: 1rem 1.25rem;
+        cursor: pointer;
+        transition: var(--transition);
+        border-radius: 10px;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+        color: var(--text-dark);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .sidebar-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--primary);
+        transform: scaleY(0);
+        transition: var(--transition);
+    }
+
+    .sidebar-item:hover {
+        background: var(--light-gray);
+        transform: translateX(4px);
+    }
+
+    .sidebar-item:hover::before {
+        transform: scaleY(1);
+    }
+
+    .sidebar-item.active {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: var(--dark);
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(241, 196, 15, 0.3);
+    }
+
+    .sidebar-item.active::before {
+        transform: scaleY(1);
+    }
+
+    /* Content */
+    .content {
+        background: var(--light);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px var(--shadow);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .content-header {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, var(--light-gray) 0%, var(--medium-gray) 100%);
+        border-bottom: 3px solid var(--primary);
+    }
+
+    .content-header h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .tag-count {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-light);
+        background: var(--light);
+        padding: 0.375rem 0.875rem;
+        border-radius: 20px;
+    }
+
+    .content-body {
+        overflow-y: auto;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .content-body::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .content-body::-webkit-scrollbar-track {
+        background: var(--light-gray);
+    }
+
+    .content-body::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 5px;
+    }
+
+    .content-body::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-dark);
+    }
+
+    /* Tags */
+    .tag {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        background: var(--light);
+        border: 2px solid var(--light-gray);
+        border-left: 5px solid var(--primary);
+        border-radius: 12px;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .tag::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, transparent 0%, rgba(241, 196, 15, 0.05) 100%);
+        opacity: 0;
+        transition: var(--transition);
+    }
+
+    .tag:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 16px var(--shadow);
+        transform: translateX(4px);
+    }
+
+    .tag:hover::before {
+        opacity: 1;
+    }
+
+    .tag strong {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+        font-weight: 600;
+        font-size: 1.1rem;
+        position: relative;
+    }
+
+    .tag-definition {
+        color: var(--text-light);
+        line-height: 1.6;
+        font-size: 0.95rem;
+        position: relative;
+    }
+
+    mark {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: var(--dark);
+        font-weight: 600;
+        padding: 0.125rem 0.25rem;
+        border-radius: 4px;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-light);
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+    }
+
+    .empty-state p {
+        font-size: 1rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .container {
+            grid-template-columns: 240px 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        header {
+            padding: 1rem;
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+        }
+
+        .controls-wrapper {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .tabs {
+            justify-content: center;
+        }
+
+        .search-wrapper {
+            max-width: 100%;
+        }
+
+        .upload {
+            text-align: center;
+        }
+
+        .container {
+            grid-template-columns: 1fr;
+            height: auto;
+            min-height: calc(100vh - 280px);
+            margin: 1rem auto;
+            padding: 0 1rem;
+        }
+
+        .sidebar {
+            max-height: 250px;
+        }
+
+        .content {
+            min-height: 400px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .tabs button {
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .upload-btn {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.875rem;
+        }
+
+        .tag {
+            padding: 1rem;
+        }
+
+        .tag strong {
+            font-size: 1rem;
+        }
+
+        .tag-definition {
+            font-size: 0.875rem;
+        }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .tag {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    /* Loading State */
+    .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        color: var(--text-light);
+    }
+
+    .loading::after {
+        content: '';
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--light-gray);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="header-content">
+        <h1>📊 Hiver Tag Categorization</h1>
+        
+        <div class="controls-wrapper">
+            <div class="tabs">
+                <button class="active" onclick="switchPlatform('HIG', event)">HIG</button>
+                <button onclick="switchPlatform('OMNI', event)">OMNI</button>
+                <button onclick="switchPlatform('Other', event)">Other</button>
+            </div>
+
+            <div class="search">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Search tags and definitions..." oninput="searchAll(this.value)">
+                </div>
+            </div>
+
+            <div class="upload">
+                <input type="file" id="csvFile" accept=".csv" onchange="loadCSV(event)">
+                <label for="csvFile" class="upload-btn">📁 Upload CSV</label>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="sidebar">
+        <div class="sidebar-header">Features</div>
+        <div class="sidebar-content" id="featureList">
+            <div class="empty-state">
+                <div class="empty-state-icon">📂</div>
+                <p>Upload a CSV to begin</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content">
+        <div class="content-header">
+            <h2>
+                <span id="contentTitle">All Tags</span>
+                <span class="tag-count" id="tagCount">0 tags</span>
+            </h2>
+        </div>
+        <div class="content-body" id="tagList">
+            <div class="empty-state">
+                <div class="empty-state-icon">🏷️</div>
+                <h3>No Data Yet</h3>
+                <p>Upload a CSV file to view tag categorization</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let rawData = [];
+let currentPlatform = "HIG";
+let currentFeature = null;
+let searchText = "";
+
+function loadCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = e => {
+        parseCSV(e.target.result);
+        renderFeatures();
+        renderTags();
+    };
+    reader.readAsText(file);
+}
+
+function parseCSV(text) {
+    const lines = text.split("\n").filter(l => l.trim());
+    if (lines.length === 0) return;
+    
+    lines.shift(); // remove header
+    rawData = lines.map(line => {
+        const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        return {
+            Tag: (values[0] || "").replace(/^"|"$/g, '').trim(),
+            Platform: (values[1] || "Other").replace(/^"|"$/g, '').trim(),
+            Feature: (values[2] || "").replace(/^"|"$/g, '').trim(),
+            Definition: (values[3] || "").replace(/^"|"$/g, '').trim()
+        };
+    }).filter(d => d.Tag); // Filter out empty entries
+}
+
+function switchPlatform(platform, event) {
+    currentPlatform = platform;
+    currentFeature = null;
+    searchText = "";
+    
+    document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+    event.target.classList.add("active");
+    document.querySelector(".search input").value = "";
+    
+    renderFeatures();
+    renderTags();
+}
+
+function renderFeatures() {
+    const features = [...new Set(
+        rawData.filter(d => d.Platform === currentPlatform).map(d => d.Feature)
+    )].filter(f => f).sort();
+
+    const featureList = document.getElementById("featureList");
+    
+    if (features.length === 0) {
+        featureList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📂</div>
+                <p>No features available</p>
+            </div>
+        `;
+        return;
+    }
+    
+    featureList.innerHTML = "";
+
+    features.forEach(f => {
+        const div = document.createElement("div");
+        div.className = "sidebar-item";
+        div.textContent = f;
+        div.onclick = () => selectFeature(f, div);
+        featureList.appendChild(div);
+    });
+}
+
+function selectFeature(feature, el) {
+    currentFeature = feature;
+    searchText = "";
+    document.querySelector(".search input").value = "";
+    document.querySelectorAll(".sidebar-item").forEach(d => d.classList.remove("active"));
+    el.classList.add("active");
+    renderTags();
+}
+
+function highlightText(text, term) {
+    if (!term || !text) return text;
+    const re = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
+    return text.replace(re, "<mark>$1</mark>");
+}
+
+function renderTags(filterText = "") {
+    const list = document.getElementById("tagList");
+    const titleEl = document.getElementById("contentTitle");
+    const countEl = document.getElementById("tagCount");
+    
+    let filteredData = rawData.filter(d => d.Platform === currentPlatform);
+    
+    if (currentFeature) {
+        filteredData = filteredData.filter(d => d.Feature === currentFeature);
+    }
+    
+    if (filterText) {
+        filteredData = filteredData.filter(d =>
+            d.Tag.toLowerCase().includes(filterText.toLowerCase()) ||
+            d.Definition.toLowerCase().includes(filterText.toLowerCase())
+        );
+    }
+
+    // Update header
+    if (filterText) {
+        titleEl.textContent = "Search Results";
+    } else if (currentFeature) {
+        titleEl.textContent = currentFeature;
+    } else {
+        titleEl.textContent = `All Tags - ${currentPlatform}`;
+    }
+    
+    countEl.textContent = `${filteredData.length} tag${filteredData.length !== 1 ? 's' : ''}`;
+
+    // Render tags
+    if (filteredData.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <h3>No Tags Found</h3>
+                <p>${filterText ? 'Try a different search term' : 'No tags available for this selection'}</p>
+            </div>
+        `;
+        return;
+    }
+    
+    list.innerHTML = "";
+
+    filteredData.forEach(d => {
+        const div = document.createElement("div");
+        div.className = "tag";
+        div.innerHTML = `
+            <strong>${highlightText(d.Tag, filterText)}</strong>
+            <div class="tag-definition">${highlightText(d.Definition, filterText)}</div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function searchAll(text) {
+    searchText = text.trim();
+    currentFeature = null;
+    document.querySelectorAll(".sidebar-item").forEach(d => d.classList.remove("active"));
+    renderTags(searchText);
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', () => {
+    renderFeatures();
+    renderTags();
+});
+</script>
+
+</body>
+</html>

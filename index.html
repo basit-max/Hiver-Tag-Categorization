@@ -556,9 +556,10 @@
                 </div>
             </div>
 
-            <div class="upload">
+            <div class="upload" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" class="upload-btn" onclick="loadFromGoogleSheet()">📊 Load from Sheet</button>
                 <input type="file" id="csvFile" accept=".csv" onchange="loadCSV(event)">
-                <label for="csvFile" class="upload-btn">📁 Upload CSV</label>
+                <label for="csvFile" class="upload-btn" style="background: var(--dark-tertiary); color: var(--light);">📁 Upload CSV</label>
             </div>
         </div>
     </div>
@@ -570,7 +571,7 @@
         <div class="sidebar-content" id="featureList">
             <div class="empty-state">
                 <div class="empty-state-icon">📂</div>
-                <p>Upload a CSV to begin</p>
+                <p>Loading...</p>
             </div>
         </div>
     </div>
@@ -585,18 +586,80 @@
         <div class="content-body" id="tagList">
             <div class="empty-state">
                 <div class="empty-state-icon">🏷️</div>
-                <h3>No Data Yet</h3>
-                <p>Upload a CSV file to view tag categorization</p>
+                <h3>Loading...</h3>
+                <p>Fetching data from sheet</p>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1Ev6ac2rylHU4-EfXWU67r6rpEaRvCPD8svlg27ZeWvQ/export?format=csv&gid=1993504789";
+const CORS_PROXY = "https://api.allorigins.win/raw?url=";
+
 let rawData = [];
 let currentPlatform = "HIG";
 let currentFeature = null;
 let searchText = "";
+
+function setLoadingState() {
+    document.getElementById("featureList").innerHTML = `
+        <div class="empty-state">
+            <div class="loading"></div>
+            <p>Loading...</p>
+        </div>
+    `;
+    document.getElementById("tagList").innerHTML = `
+        <div class="empty-state">
+            <div class="loading"></div>
+            <p>Loading...</p>
+        </div>
+    `;
+}
+
+function setErrorState() {
+    document.getElementById("featureList").innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <h3>Could not load sheet</h3>
+            <p>Check that it's shared with "Anyone with the link" or upload a CSV below.</p>
+        </div>
+    `;
+    document.getElementById("tagList").innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <h3>Could not load data</h3>
+            <p>Check that the sheet is shared with "Anyone with the link" or upload a CSV file.</p>
+        </div>
+    `;
+}
+
+function loadFromGoogleSheet() {
+    setLoadingState();
+    function onSuccess(text) {
+        parseCSV(text);
+        renderFeatures();
+        renderTags();
+    }
+    function onFailure() {
+        setErrorState();
+    }
+    fetch(SHEET_CSV_URL)
+        .then(res => {
+            if (!res.ok) throw new Error("Network error");
+            return res.text();
+        })
+        .then(onSuccess)
+        .catch(() => {
+            fetch(CORS_PROXY + encodeURIComponent(SHEET_CSV_URL))
+                .then(res => {
+                    if (!res.ok) throw new Error("Network error");
+                    return res.text();
+                })
+                .then(onSuccess)
+                .catch(onFailure);
+        });
+}
 
 function loadCSV(event) {
     const file = event.target.files[0];
@@ -744,10 +807,9 @@ function searchAll(text) {
     renderTags(searchText);
 }
 
-// Initialize on load
+// Initialize on load: fetch from Google Sheet first
 document.addEventListener('DOMContentLoaded', () => {
-    renderFeatures();
-    renderTags();
+    loadFromGoogleSheet();
 });
 </script>
 
